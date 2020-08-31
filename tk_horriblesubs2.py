@@ -31,11 +31,13 @@ button1.pack(side='top')
 
 # Instance of text box
 textbox = tkinter.Text(root, height=25, width=80)
+textbox.config(state=NORMAL)
 textbox.pack(side="top")
 
-def get_links(url):
+def get_links(url, quality="720p"):
     """Gets the first batch from the url given"""
-    response = requests.get(url)
+    request_session = requests.session()
+    response = request_session.get(url)
     tree = html.fromstring(response.text)
     show_id_link = tree.xpath('//*[@class="post-inner-content"]/article/div/script')
     # get the show id
@@ -43,19 +45,17 @@ def get_links(url):
     magnet_link_list = []
     page_no=0
 
-    show_request_URL = f"https://horriblesubs.info/api.php?method=getshows&type=show&showid={show_id}nextid={page_no}"
-    show_response = requests.get(show_request_URL)
-    show_request_tree = html.fromstring(show_response.text)
-    magnet_link_list = show_request_tree.xpath('//*[@class="rls-link link-720p"]/span[2]/a')
-    # while True:
-    #     try:
-    #         show_request_URL = f"https://horriblesubs.info/api.php?method=getshows&type=show&showid={show_id}nextid={page_no}"
-    #         show_response = requests.get(show_request_URL)
-    #         show_request_tree = html.fromstring(show_response.text)
-    #         magnet_link_list = show_request_tree.xpath('//*[@class="rls-link link-720p"]/span[2]/a')
-    #         page_no = page_no + 1
-    #     except:
-    #         break
+    while True:
+        show_request_URL = f"https://horriblesubs.info/api.php?method=getshows&type=show&showid={show_id}&nextid={page_no}"
+        print(show_request_URL)
+        show_response = request_session.get(show_request_URL)
+        show_request_tree = html.fromstring(show_response.text)
+        requests_xpath = show_request_tree.xpath(f'//*[@class="rls-link link-{quality}"]/span[2]/a')
+        if len(requests_xpath) != 0:
+            page_no = page_no + 1
+            magnet_link_list.extend(requests_xpath)
+        else:
+            break
 
     return [a.get('href') for a in magnet_link_list]
 
