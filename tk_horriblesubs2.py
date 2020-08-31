@@ -1,14 +1,8 @@
 import tkinter
-from time import sleep
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.common.exceptions import InvalidArgumentException
 import requests
 from lxml import html
 
-
-request_session = requests.session()
-response = request_session.get("https://jespa.megahtex.com/web/login")
+# url = "https://horriblesubs.info/shows/maou-gakuin-no-futekigousha"
 
 # Tkinter init
 root = tkinter.Tk("test")
@@ -39,6 +33,32 @@ button1.pack(side='top')
 textbox = tkinter.Text(root, height=25, width=80)
 textbox.pack(side="top")
 
+def get_links(url):
+    """Gets the first batch from the url given"""
+    response = requests.get(url)
+    tree = html.fromstring(response.text)
+    show_id_link = tree.xpath('//*[@class="post-inner-content"]/article/div/script')
+    # get the show id
+    show_id = show_id_link[0].text.split()[3][:-1]
+    magnet_link_list = []
+    page_no=0
+
+    show_request_URL = f"https://horriblesubs.info/api.php?method=getshows&type=show&showid={show_id}nextid={page_no}"
+    show_response = requests.get(show_request_URL)
+    show_request_tree = html.fromstring(show_response.text)
+    magnet_link_list = show_request_tree.xpath('//*[@class="rls-link link-720p"]/span[2]/a')
+    # while True:
+    #     try:
+    #         show_request_URL = f"https://horriblesubs.info/api.php?method=getshows&type=show&showid={show_id}nextid={page_no}"
+    #         show_response = requests.get(show_request_URL)
+    #         show_request_tree = html.fromstring(show_response.text)
+    #         magnet_link_list = show_request_tree.xpath('//*[@class="rls-link link-720p"]/span[2]/a')
+    #         page_no = page_no + 1
+    #     except:
+    #         break
+
+    return [a.get('href') for a in magnet_link_list]
+
 
 def set_label(name):
     """Dynamically sets name of the botton label"""
@@ -50,47 +70,24 @@ def GetMagnets(url):
 
     set_label(url)  # text variable for label
 
-    from selenium.webdriver.chrome.options import Options
-    option = Options()
-    option.headless = True
+    try:
+        magnet_links = get_links(url)
 
-    with webdriver.Chrome() as driver:
+    except InvalidArgumentException:
+        set_label("Invalid URL!")
 
-        try:
-            driver.get(url)
+    magnets = ""
+    count = 0
+    for link in magnet_links:
+        magnets += link
+        count += 1
+        magnets += "\n"
 
-            sleep(3)
-            set_label("Sleeping for 3 Sec")
+    output = "Total: {} links scraped".format(str(count))
+    print(output)
 
-            try:
-                show_more = driver.find_element_by_class_name('more-button')
-                show_more.click()
+    textbox.insert(tkinter.END, magnets)
 
-            except Exception:
-                print('did not click show more button')
-                pass
-
-            sleep(3)
-            # magnet_links = driver.find_elements_by_xpath('//*[@title="Magnet Link"]')
-            magnet_links = driver.find_elements_by_xpath(
-                '//*[@class="rls-link link-720p"]/span[2]/a')
-
-            magnets = ""
-            count = 0
-            for link in magnet_links:
-                magnets += link.get_attribute("href")
-                count += 1
-                magnets += "\n"
-
-            output = "Total: {} links scraped".format(str(count))
-            print(output)
-
-            textbox.insert(tkinter.END, magnets)
-
-            set_label(output)
-
-        except InvalidArgumentException:
-            set_label("Invalid URL!")
-
+    set_label(output)
 
 root.mainloop()
