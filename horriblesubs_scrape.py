@@ -1,8 +1,8 @@
 import tkinter
 import requests
 from lxml import html
+import threading
 
-# url = "https://horriblesubs.info/shows/maou-gakuin-no-futekigousha"
 
 # Tkinter init
 root = tkinter.Tk("test")
@@ -17,6 +17,11 @@ url_label.pack(side='top', fill=tkinter.X)
 entry1 = tkinter.Entry(root, width=60)
 entry1.pack(side='top')
 
+# Button instance
+button1 = tkinter.Button(text='Get the Links',
+                         command=lambda: threading.Thread(target=GetMagnets, args=(entry1.get(),)).start())
+button1.pack(side='top')
+
 # Instance of bottom label
 label_var = tkinter.StringVar()
 
@@ -24,15 +29,11 @@ label_var = tkinter.StringVar()
 status_label = tkinter.Label(root, textvariable=label_var)
 status_label.pack(side='bottom')
 
-# Button instance
-button1 = tkinter.Button(text='Get the Links',
-                         command=lambda: GetMagnets(entry1.get()))
-button1.pack(side='top')
-
 # Instance of text box
 textbox = tkinter.Text(root, height=25, width=80)
-textbox.config(state=NORMAL)
+textbox.config()
 textbox.pack(side="top")
+
 
 def get_links(url, quality="720p"):
     """Gets the first batch from the url given"""
@@ -67,6 +68,7 @@ def set_label(name):
 
 def GetMagnets(url):
     """Main Function runs when button is clicked"""
+    textbox.delete("1.0","end")
 
     set_label(url)  # text variable for label
 
@@ -90,4 +92,5 @@ def GetMagnets(url):
 
     set_label(output)
 
-root.mainloop()
+if __name__ == "__main__":
+    root.mainloop()
